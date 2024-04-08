@@ -1,0 +1,7 @@
+server:
+  port: 8061
+spring:
+  application:
+    name: discovery-service
+  config:
+    import: "optional:configserver:http://configservice:8088"

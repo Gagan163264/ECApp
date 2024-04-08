@@ -1,0 +1,118 @@
+networks:
+  ecappNet:
+    external: true
+    
+services:
+    postgres:
+      container_name: postgres
+      image: postgres:latest
+      ports:
+        - 5432:5436
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      environment:
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_USER=postgres
+        - POSTGRES_DB=ecapp
+      networks:
+        - ecappNet
+      
+    rabbitmq:
+      container_name: rabbitmq
+      image: rabbitmq:management
+      ports:
+        - 5672:5672
+        - 15672:15672
+      environment:
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
+      networks:
+        - ecappNet
+
+    config-service:
+      container_name: configservice
+      image: configservice:latest
+      ports:
+        - 8088:8088
+      networks:
+        - ecappNet
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://configservice:8088/actuator/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+
+    discovery-service:
+      container_name: discoveryservice
+      image: discoveryservice:latest
+      ports:
+        - 8061:8061
+      depends_on:
+        config-service:
+          condition: service_healthy
+      networks:
+        - ecappNet
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://discoveryservice:8061/actuator/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+
+    gateway-service:
+      container_name: gatewayservice
+      image: gatewayservice:latest
+      ports:
+        - 8060:8060
+      depends_on:
+        discovery-service:
+          condition: service_healthy
+      networks:
+        - ecappNet
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://gatewayservice:8060/actuator/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 10
+
+    login-service:
+      container_name: loginservice
+      image: loginservice:latest
+      ports:
+        - 8090:8090
+      depends_on:
+        gateway-service:
+          condition: service_healthy
+      networks:
+        - ecappNet
+
+    order-service:
+      container_name: orderservice
+      image: orderservice:latest
+      ports:
+        - 8092:8092
+      depends_on:
+        gateway-service:
+          condition: service_healthy
+      networks:
+        - ecappNet
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://orderservice:8092/actuator/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+
+
+    shopdata-service:
+      container_name: shopdataservice
+      image: shopdataservice:latest
+      ports:
+        - 8091:8091
+      depends_on:
+        order-service:
+          condition: service_healthy
+      networks:
+        - ecappNet
+
+volumes:
+  pgdata:
+  

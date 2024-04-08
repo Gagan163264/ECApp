@@ -1,0 +1,56 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discoveryservice:8061/eureka/
+
+logging:
+  pattern: 
+    console: "%d{yyyy-MM-dd HH:mm:ss} ${LOG_LEVEL_PATTERN:-%5p} %m%n"
+              
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+      - id: shopdata-service
+        uri: lb://shopdata-service
+        predicates:
+        - Path=/shopdataservice/**
+        filters:
+        - AuthenticationFilter
+        - RewritePath=/shopdataservice/(?<path>.*), /$\{path}
+
+      - id: login-service
+        uri: lb://login-service
+        predicates:
+          - Path=/auth/**
+        filters:
+          - RewritePath=/login/(?<path>.*), /$\{path}
+
+      - id: order-service
+        uri: lb://order-service
+        predicates:
+          - Path=/orderservice/**
+        filters:
+          - AuthenticationFilter
+          - RewritePath=/orderservice/(?<path>.*), /$\{path}
+
+      - id: openapi
+        uri: http://localhost:${server.port}
+        predicates:
+          - Path=/v3/api-docs/**
+        filters:
+          - RewritePath=/v3/api-docs/(?<path>.*), /$\{path}/v3/api-docs
+springdoc:
+  enable-native-support: true
+  api-docs:
+     enabled: true
+  swagger-ui:
+    enabled: true
+    urls:
+      - name: shopdata-service
+        url: /v3/api-docs/shopdataservice
+      - name: login-service
+        url: /v3/api-docs/loginservice

@@ -1,2 +1,1 @@
-# ECApp
-ECommerce microservices app
+Java FSD Project
