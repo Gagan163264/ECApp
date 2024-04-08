@@ -1,0 +1,7 @@
+server:
+  port: 8092
+spring:
+  application:
+    name: order-service
+  config:
+    import: "optional:configserver:http://configservice:8088"
